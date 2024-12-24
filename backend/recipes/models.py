@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from users.models import CustomUser
 
 
 class Ingredient(models.Model):
@@ -17,7 +17,8 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recipes')
+    author = models.ForeignKey(CustomUser, on_delete=models.CASCADE,
+                               related_name='recipes')
     ingredients = models.ManyToManyField(Ingredient, through='RecipeIngredient')
     tags = models.ManyToManyField(Tag, related_name='recipes')
     image = models.ImageField(upload_to='recipes/images/')
