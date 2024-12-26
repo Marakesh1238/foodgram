@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -37,9 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'djoser',
     'rest_framework',
     'rest_framework.authtoken',
+    'djoser',
     'django_filters',
     'django.contrib.staticfiles',
     'users',
@@ -109,13 +110,25 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    "DEFAULT_PERMISSION_CLASSES": [
+        'rest_framework.permissions.AllowAny',
+    ],
+    "DEFAULT_AUTHENTICATION_CLASSES": [
         'rest_framework.authentication.TokenAuthentication',
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-    ),
+    ],
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+    ],
+}
+
+DJOSER = {
+    'LOGIN_FIELD': 'email',
+    'HIDE_USERS': False,
+    'SERIALIZERS': {
+        'user': 'api.serializers.CustomUserSerializer',
+        "current_user": "api.serializers.CustomUserSerializer",
+        "user_create": "api.serializers.CustomUserCreateSerializer",
+    },
 }
 
 AUTH_USER_MODEL = 'users.CustomUser'
