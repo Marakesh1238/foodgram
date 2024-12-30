@@ -3,7 +3,7 @@ from django.db import models
 from django.core.validators import RegexValidator
 
 
-class CustomUser(AbstractUser):
+class User(AbstractUser):
     email = models.EmailField(max_length=254, unique=True)
     username_validator = RegexValidator(regex=r'^[\w.@+-]+\Z',
                                         message="Username must match the pattern ^[\w.@+-]+\Z")
@@ -28,3 +28,28 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.username
+
+
+class Subscription(models.Model):
+    follower = models.ForeignKey(User,
+                                 on_delete=models.CASCADE,
+                                 related_name='follower',
+                                 verbose_name='подписчик')
+    following = models.ForeignKey(User,
+                                  on_delete=models.CASCADE,
+                                  related_name='following',
+                                  verbose_name='Автор')
+
+    class Meta:
+        ordering = ('id',)
+        constraints = (
+            models.UniqueConstraint(
+                fields=['follower', 'following'],
+                name='unique_subscription'
+            ),
+        )
+        verbose_name = 'Подписка'
+        verbose_name_plural = 'Подписки'
+
+    def __str__(self):
+        return f'{self.follower.username} подписан {self.following.username}'

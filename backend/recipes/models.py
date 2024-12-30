@@ -1,5 +1,5 @@
 from django.db import models
-from users.models import CustomUser
+from users.models import User
 
 
 class Ingredient(models.Model):
@@ -17,7 +17,7 @@ class Tag(models.Model):
 
 
 class Recipe(models.Model):
-    author = models.ForeignKey(CustomUser,
+    author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
                                related_name='author')
     ingredients = models.ManyToManyField(Ingredient,
@@ -42,12 +42,12 @@ class RecipeIngredient(models.Model):
 
 
 class ShoppingCart(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     recipes = models.ManyToManyField(Recipe, related_name='shopping_carts')
 
 
 class Favorite(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
 
     class Meta:
@@ -55,8 +55,12 @@ class Favorite(models.Model):
 
 
 class Subscription(models.Model):
-    user = models.ForeignKey(CustomUser, related_name='subscriptions', on_delete=models.CASCADE)
-    author = models.ForeignKey(CustomUser, related_name='followers', on_delete=models.CASCADE)
+    user = models.ForeignKey(User,
+                             related_name='subscriptions',
+                             on_delete=models.CASCADE)
+    author = models.ForeignKey(User,
+                               related_name='followers',
+                               on_delete=models.CASCADE)
 
     class Meta:
         unique_together = ('user', 'author')

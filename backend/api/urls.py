@@ -1,5 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+
+from users.views import UserViewSet
 from .views import CustomTokenObtainPairView, FavoriteViewSet, IngredientViewSet, RecipeViewSet, ShoppingCartViewSet, TagViewSet
 
 
@@ -7,11 +9,11 @@ router = DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipe')
 router.register(r'tags', TagViewSet, basename='tag')
 router.register(r'ingredients', IngredientViewSet, basename='ingredient')
+router.register('users', UserViewSet, basename='users')
 
 
 auth_urlpatterns = [
     path('auth/token/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]
 
@@ -39,5 +41,5 @@ recipe_urlpatterns = [
 
 
 urlpatterns = [
-    path('', include('users.urls')),
+    path('', include(router.urls)),
 ] + auth_urlpatterns + recipe_urlpatterns

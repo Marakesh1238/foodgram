@@ -10,8 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
-from .serializers import CustomTokenObtainPairSerializer, CustomUserCreateSerializer, IngredientSerializer, RecipeSerializer, RecipeCreateSerializer, TagSerializer
-
+from .serializers import CustomTokenObtainPairSerializer, UserCreateSerializer, IngredientSerializer, RecipeSerializer, RecipeCreateSerializer, TagSerializer
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -139,21 +138,8 @@ class CustomTokenObtainPairView(APIView):
         return Response({'auth_token': str(refresh.access_token)})
 
 
-class LogoutView(APIView):
-    permission_classes = (IsAuthenticated,)
-
-    def post(self, request):
-        try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Exception as e:
-            return Response(status=status.HTTP_401_UNAUTHORIZED, data={"detail": str(e)})
-
-
 class UserRegistrationView(generics.CreateAPIView):
-    serializer_class = CustomUserCreateSerializer
+    serializer_class = UserCreateSerializer
     permission_classes = []
 
     def create(self, request, *args, **kwargs):

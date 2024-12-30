@@ -131,13 +131,17 @@ DJOSER = {
     'LOGIN_FIELD': 'email',
     'HIDE_USERS': False,
     'SERIALIZERS': {
-        'user': 'api.serializers.CustomUserSerializer',
-        "current_user": "api.serializers.CustomUserSerializer",
-        "user_create": "api.serializers.CustomUserCreateSerializer",
+        'user': 'api.serializers.UserSerializer',
+        "current_user": "api.serializers.UserSerializer",
+        "user_create": "api.serializers.UserCreateSerializer",
+    },
+    'PERMISSIONS': {
+        'user': ['djoser.permissions.CurrentUserOrAdminOrReadOnly'],
+        'user_list': ['rest_framework.permissions.AllowAny'],
     },
 }
 
-AUTH_USER_MODEL = 'users.CustomUser'
+AUTH_USER_MODEL = 'users.User'
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 

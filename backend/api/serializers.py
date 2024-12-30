@@ -1,27 +1,27 @@
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from django.contrib.auth import authenticate, get_user_model
+from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient,
                             ShoppingCart, Subscription, Tag)
-from users.models import CustomUser
+from users.models import User
 
 
-class CustomUserSerializer(UserSerializer):
+class UserSerializer(UserSerializer):
     class Meta:
-        model = CustomUser
+        model = User
         fields = ['id', 'email', 'username',
                   'first_name', 'last_name',
                   'is_subscribed', 'avatar']
 
 
-class CustomUserCreateSerializer(UserCreateSerializer):
+class UserCreateSerializer(UserCreateSerializer):
     """Сериализатор для регистрации пользователей."""
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             "email",
             "id",
@@ -32,9 +32,9 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         )
 
 
-class CustomUserDetailSerializer(serializers.ModelSerializer):
+class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomUser
+        model = User
         fields = ['id', 'email', 'username', 'first_name',
                   'last_name', 'is_subscribed', 'avatar']
 
@@ -43,12 +43,12 @@ class AvatarUpdateSerializer(serializers.ModelSerializer):
     avatar = serializers.ImageField(required=True)
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = ['avatar']
 
 
 class SubscriptionSerializer(serializers.ModelSerializer):
-    author = CustomUserSerializer(read_only=True)
+    author = UserSerializer(read_only=True)
 
     class Meta:
         model = Subscription
