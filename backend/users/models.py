@@ -10,6 +10,7 @@ class CustomUser(AbstractUser):
     password = models.CharField(max_length=150)
     is_subscribed = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    is_active = models.BooleanField(default=True)
 
     class Meta:
         verbose_name = 'Пользователь'

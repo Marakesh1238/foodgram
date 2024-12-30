@@ -1,15 +1,18 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import FavoriteViewSet, RecipeViewSet, ShoppingCartViewSet
-
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 router = DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipe')
 
 
 auth_urlpatterns = [
-    path('', include('djoser.urls')),
-    path("auth/", include("djoser.urls.authtoken")),
+    path('auth/token/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 
