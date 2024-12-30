@@ -1,13 +1,16 @@
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
+from api.views import UserRegistrationView
+
 from .views import (AvatarDeleteView, AvatarUpdateView, CurrentUserView,
                     CustomUserDetailView,
-                    SubscriptionViewSet)
+                    SubscriptionViewSet, UserViewSet)
 
 
 router = DefaultRouter()
 router.register(r'users/subscriptions', SubscriptionViewSet, basename='subscription')
+router.register(r'users', UserViewSet, basename='user')
 
 user_urlpatterns = [
     path('users/<int:id>/', CustomUserDetailView.as_view(), name='user-detail'),
