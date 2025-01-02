@@ -93,12 +93,16 @@ class RecipeSerializer(serializers.ModelSerializer):
                   'name', 'image', 'text', 'cooking_time']
 
     def get_is_favorited(self, obj):
-        # Implement logic to check if the recipe is favorited by the user
-        pass
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return obj.favorites.filter(user=request.user).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        # Implement logic to check if the recipe is in the shopping cart
-        pass
+        request = self.context.get('request')
+        if request is None:
+            return False
+        return obj.shopping_cart.filter(user=request.user).exists()
 
 
 class RecipeCreateSerializer(serializers.ModelSerializer):
