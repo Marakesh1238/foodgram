@@ -6,7 +6,7 @@ class Ingredient(models.Model):
     name = models.CharField(max_length=256)
     measurement_unit = models.CharField(max_length=20)
 
-    def __str__(self):        
+    def __str__(self):
         return self.name
 
 

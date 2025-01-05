@@ -5,8 +5,10 @@ from django.core.validators import RegexValidator
 
 class User(AbstractUser):
     email = models.EmailField(max_length=254, unique=True)
-    username_validator = RegexValidator(regex=r'^[\w.@+-]+\Z',
-                                        message="Username must match the pattern ^[\w.@+-]+\Z")
+    username_validator = RegexValidator(
+        regex=r'^[\w.@+-]+\Z',
+        message=(
+            "Username must match the pattern ^[\\w.@+-]+\\Z"))
     username = models.CharField(
         max_length=150,
         unique=True,
@@ -21,6 +23,9 @@ class User(AbstractUser):
     is_subscribed = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     class Meta:
         verbose_name = 'Пользователь'

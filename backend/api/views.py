@@ -4,13 +4,12 @@ from django.http import FileResponse
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
-from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.decorators import action
-from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
-from .serializers import CustomTokenObtainPairSerializer, UserCreateSerializer, IngredientSerializer, RecipeSerializer, RecipeCreateSerializer, TagSerializer
+from .serializers import (UserCreateSerializer, IngredientSerializer,
+                          RecipeSerializer, RecipeCreateSerializer,
+                          TagSerializer)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -72,7 +71,8 @@ class ShoppingCartViewSet(viewsets.ViewSet):
 
         output.seek(0)
         response = FileResponse(output, content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.csv"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.csv"')
         return response
 
     @action(detail=True, methods=['post'], url_path='shopping_cart')
@@ -127,17 +127,6 @@ class FavoriteViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class CustomTokenObtainPairView(APIView):
-    permission_classes = []
-
-    def post(self, request, *args, **kwargs):
-        serializer = CustomTokenObtainPairSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
-        refresh = RefreshToken.for_user(user)
-        return Response({'auth_token': str(refresh.access_token)})
-
-
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserCreateSerializer
     permission_classes = []
@@ -147,7 +136,8 @@ class UserRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data,
+                        status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -161,4 +151,3 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
     filter_backends = [SearchFilter]
     search_fields = ['name']
-

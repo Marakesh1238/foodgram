@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from users.views import UserViewSet
-from .views import CustomTokenObtainPairView, FavoriteViewSet, IngredientViewSet, RecipeViewSet, ShoppingCartViewSet, TagViewSet
+from .views import (FavoriteViewSet, IngredientViewSet,
+                    RecipeViewSet, ShoppingCartViewSet, TagViewSet)
 
 
 router = DefaultRouter()
@@ -13,7 +14,7 @@ router.register('users', UserViewSet, basename='users')
 
 
 auth_urlpatterns = [
-    path('auth/token/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.authtoken')),
 ]
 

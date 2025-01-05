@@ -164,7 +164,9 @@ class FavoriteSerializer(serializers.ModelSerializer):
 
 class CustomTokenObtainPairSerializer(serializers.Serializer):
     email = serializers.EmailField(label="Email", write_only=True)
-    password = serializers.CharField(label="Password", style={'input_type': 'password'}, trim_whitespace=False)
+    password = serializers.CharField(
+        label="Password", style={'input_type': 'password'},
+        trim_whitespace=False)
 
     def validate(self, attrs):
         email = attrs.get('email')
