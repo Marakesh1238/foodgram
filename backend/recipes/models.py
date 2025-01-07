@@ -15,11 +15,14 @@ class Tag(models.Model):
     color = models.CharField(max_length=7)
     slug = models.SlugField(unique=True)
 
+    def __str__(self):
+        return self.name
+
 
 class Recipe(models.Model):
     author = models.ForeignKey(User,
                                on_delete=models.CASCADE,
-                               related_name='author')
+                               related_name='recipes')
     ingredients = models.ManyToManyField(Ingredient,
                                          through='RecipeIngredient')
     tags = models.ManyToManyField(Tag, related_name='tags')
@@ -27,6 +30,8 @@ class Recipe(models.Model):
     name = models.CharField(max_length=256)
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
+    is_in_shopping_cart = models.BooleanField(default=False)
+
 
     def __str__(self):
         return self.name
@@ -45,6 +50,9 @@ class ShoppingCart(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     recipes = models.ManyToManyField(Recipe, related_name='shopping_carts')
 
+    def __str__(self):
+        return f"Shopping Cart for {self.user.username}"
+
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -53,6 +61,8 @@ class Favorite(models.Model):
     class Meta:
         unique_together = ('user', 'recipe')
 
+    def __str__(self):
+        return f"{self.user.username} likes {self.recipe.name}"
 
 class Subscription(models.Model):
     user = models.ForeignKey(User,
@@ -64,3 +74,6 @@ class Subscription(models.Model):
 
     class Meta:
         unique_together = ('user', 'author')
+    
+    def __str__(self):
+        return f"{self.user.username} follows {self.author.username}"
