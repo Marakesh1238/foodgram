@@ -3,6 +3,8 @@
 volumes:
   pg_data:
   static:
+  media:
+
 services:
   db:
     image: postgres:13.10
@@ -17,6 +19,7 @@ services:
       - db
     volumes:
       - static:/backend_static
+      - media:/app/media
     ports:
       - "8000:8000"
 
@@ -32,5 +35,6 @@ services:
     env_file: .env
     volumes:
       - static:/staticfiles/
+      - media:/staticfiles/static/media/
     ports:
       - 8001:80
