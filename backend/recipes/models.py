@@ -1,18 +1,19 @@
 from django.db import models
+
+from api.constants import MAX_LENGTH, MAX_MEASURENENT_UNUT
 from users.models import User
 
 
 class Ingredient(models.Model):
-    name = models.CharField(max_length=256)
-    measurement_unit = models.CharField(max_length=20)
+    name = models.CharField(max_length=MAX_LENGTH)
+    measurement_unit = models.CharField(max_length=MAX_MEASURENENT_UNUT)
 
     def __str__(self):
         return self.name
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=256)
-    color = models.CharField(max_length=7)
+    name = models.CharField(max_length=MAX_LENGTH)
     slug = models.SlugField(unique=True)
 
     def __str__(self):
@@ -27,11 +28,11 @@ class Recipe(models.Model):
                                          through='RecipeIngredient')
     tags = models.ManyToManyField(Tag, related_name='tags')
     image = models.ImageField(upload_to='recipes/images/')
-    name = models.CharField(max_length=256)
+    name = models.CharField(max_length=MAX_LENGTH)
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
     is_in_shopping_cart = models.BooleanField(default=False)
-
+    is_favorited = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -64,6 +65,7 @@ class Favorite(models.Model):
     def __str__(self):
         return f"{self.user.username} likes {self.recipe.name}"
 
+
 class Subscription(models.Model):
     user = models.ForeignKey(User,
                              related_name='subscriptions',
@@ -74,6 +76,6 @@ class Subscription(models.Model):
 
     class Meta:
         unique_together = ('user', 'author')
-    
+
     def __str__(self):
         return f"{self.user.username} follows {self.author.username}"

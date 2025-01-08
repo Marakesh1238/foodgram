@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from djoser.serializers import UserCreateSerializer, UserSerializer
-from django.contrib.auth import get_user_model
-from rest_framework_simplejwt.tokens import RefreshToken
 
+from users.serializers import Base64ImageField
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient,
                             ShoppingCart, Subscription, Tag)
@@ -30,13 +29,6 @@ class UserCreateSerializer(UserCreateSerializer):
             "last_name",
             "password",
         )
-
-
-class UserDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'email', 'username', 'first_name',
-                  'last_name', 'is_subscribed', 'avatar']
 
 
 class AvatarUpdateSerializer(serializers.ModelSerializer):
@@ -109,6 +101,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True)
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.all())
+    image = Base64ImageField(required=False)
 
     class Meta:
         model = Recipe
@@ -146,6 +139,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class RecipeIngredientCreateSerializer(serializers.ModelSerializer):
+    ingredient = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all())
+
+    class Meta:
+        model = RecipeIngredient
+        fields = ['ingredient', 'amount']
+
+
 class ShoppingCartSerializer(serializers.ModelSerializer):
     recipes = RecipeSerializer(many=True)
 
@@ -160,35 +162,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ['recipe']
-
-
-class CustomTokenObtainPairSerializer(serializers.Serializer):
-    email = serializers.EmailField(label="Email", write_only=True)
-    password = serializers.CharField(
-        label="Password", style={'input_type': 'password'},
-        trim_whitespace=False)
-
-    def validate(self, attrs):
-        email = attrs.get('email')
-        password = attrs.get('password')
-
-        if email and password:
-            User = get_user_model()
-            try:
-                user = User.objects.get(email=email)
-            except User.DoesNotExist:
-                msg = 'No user found with this email.'
-                raise serializers.ValidationError(msg, code='authorization')
-
-            if not user.check_password(password):
-                msg = 'Unable to log in with provided credentials.'
-                raise serializers.ValidationError(msg, code='authorization')
-        else:
-            msg = 'Must include "email" and "password".'
-            raise serializers.ValidationError(msg, code='authorization')
-
-        attrs['user'] = user
-        return attrs
-
-    def get_token(self, user):
-        return RefreshToken.for_user(user)

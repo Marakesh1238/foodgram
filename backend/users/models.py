@@ -2,24 +2,23 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
 
+from api.constants import (HELP_TEXT_NAME, MAX_EMAIL_FIELD,
+                           MAX_NAME_FIELD, UNIQUE_FIELDS)
+
 
 class User(AbstractUser):
-    email = models.EmailField(max_length=254, unique=True)
+    email = models.EmailField(max_length=MAX_EMAIL_FIELD, unique=True)
     username_validator = RegexValidator(
         regex=r'^[\w.@+-]+\Z',
-        message=(
-            "Username must match the pattern ^[\\w.@+-]+\\Z"))
+        message=HELP_TEXT_NAME)
     username = models.CharField(
-        max_length=150,
+        max_length=MAX_NAME_FIELD,
         unique=True,
         validators=[username_validator],
-        error_messages={
-            'unique': "A user with that username already exists.",
-        },
+        error_messages=UNIQUE_FIELDS,
     )
-    first_name = models.CharField(max_length=150)
-    last_name = models.CharField(max_length=150)
-    password = models.CharField(max_length=150)
+    first_name = models.CharField(max_length=MAX_NAME_FIELD)
+    last_name = models.CharField(max_length=MAX_NAME_FIELD)
     is_subscribed = models.BooleanField(default=False)
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
     is_active = models.BooleanField(default=True)
@@ -30,6 +29,7 @@ class User(AbstractUser):
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
+        ordering = ['username']
 
     def __str__(self):
         return self.username

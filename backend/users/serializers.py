@@ -14,7 +14,6 @@ from rest_framework.serializers import (
 from rest_framework.validators import UniqueTogetherValidator
 
 from recipes.models import Recipe
-
 from .models import Subscription, User
 
 

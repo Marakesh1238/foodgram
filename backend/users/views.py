@@ -3,7 +3,6 @@ from djoser.views import UserViewSet
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import SearchFilter
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -13,8 +12,7 @@ from rest_framework.status import (
     HTTP_400_BAD_REQUEST
 )
 
-from api.constants import PER_PAGE
-
+from users.paginations import CustomUserPagination
 from .models import Subscription, User
 from .serializers import (
     AvatarSerializer,
@@ -24,18 +22,11 @@ from .serializers import (
 )
 
 
-class FoodgramPagination(PageNumberPagination):
-    """Пагинация для проекта"""
-
-    page_size = PER_PAGE
-    page_size_query_param = 'limit'
-
-
 class UserViewSet(UserViewSet):
     serializer_class = UserSerializer
-    queryset = User.objects.all()
+    queryset = User.objects.all().order_by('username')
     permission_classes = (AllowAny,)
-    pagination_class = FoodgramPagination
+    pagination_class = CustomUserPagination
     lookup_field = 'id'
     filter_backends = (SearchFilter,)
     search_fields = ('username',)
@@ -49,7 +40,6 @@ class UserViewSet(UserViewSet):
         permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
-
         serializer = UserSerializer(
             request.user, data=request.data,
             partial=True, context={'request': request}
@@ -104,7 +94,7 @@ class UserViewSet(UserViewSet):
     )
     def subscriptions(self, request):
         authors = User.objects.filter(following__follower=request.user)
-        paginator = FoodgramPagination()
+        paginator = CustomUserPagination()
         result_pages = paginator.paginate_queryset(
             queryset=authors, request=request
         )
