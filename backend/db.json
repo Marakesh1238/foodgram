@@ -136,11 +136,27 @@
         }
     },
     {
-        "model": "recipes.ingredient",
-        "pk": 18,
+        "model": "recipes.tag",
+        "id": 1,
         "fields": {
-            "name": "алкоголь",
-            "measurement_unit": "мл"
+            "name": "завтрак",
+            "slug": "breakfast"
+        }
+    },
+    {
+        "model": "recipes.tag",
+        "id": 2,
+        "fields": {
+            "name": "обед",
+            "slug": "lunch"
+        }
+    },
+    {
+        "model": "recipes.tag",
+        "id": 3,
+        "fields": {
+            "name": "ужин",
+            "slug": "dinner"
         }
     }
 ]

@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from rest_framework import generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import SearchFilter
@@ -18,7 +19,7 @@ from .serializers import (
     AvatarSerializer,
     SubscriptionSerializer,
     SubscriptionShowSerializer,
-    UserSerializer
+    UserSerializer, UserCreateSerializer
 )
 
 
@@ -126,3 +127,16 @@ class UserViewSet(UserViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+class UserRegistrationView(generics.CreateAPIView):
+    serializer_class = UserCreateSerializer
+    permission_classes = []
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,
+                        status=HTTP_201_CREATED, headers=headers)

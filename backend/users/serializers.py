@@ -78,17 +78,18 @@ class UserCreateSerializer(UserCreateSerializer):
 
 class UserSerializer(UserSerializer):
     is_subscribed = SerializerMethodField(read_only=True)
+    avatar = Base64ImageField(read_only=True)
 
     class Meta:
         model = User
         fields = (
-            'username',
             'email',
+            'id',
+            'username',
             'first_name',
             'last_name',
             'is_subscribed',
             'avatar',
-            'id'
         )
 
     def get_is_subscribed(self, object):

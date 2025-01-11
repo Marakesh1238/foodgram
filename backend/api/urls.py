@@ -2,14 +2,13 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from users.views import UserViewSet
-from .views import (FavoriteViewSet, IngredientViewSet,
+from .views import (FavoriteViewSet, IngredientDetailView, IngredientListView,
                     RecipeViewSet, ShoppingCartViewSet, TagViewSet)
 
 
 router = DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipe')
 router.register(r'tags', TagViewSet, basename='tag')
-router.register(r'ingredients', IngredientViewSet, basename='ingredient')
 router.register('users', UserViewSet, basename='users')
 
 
@@ -38,6 +37,14 @@ recipe_urlpatterns = [
              'delete': 'remove_from_favorite'
          }),
          name='recipe-favorite'),
+    path("ingredients/", IngredientListView.as_view(),
+         name="ingredient-list"),
+    # Получение ингредиента по ID.
+    path(
+        "ingredients/<int:id>/",
+        IngredientDetailView.as_view(),
+        name="ingredient-detail",
+    ),
 ]
 
 
