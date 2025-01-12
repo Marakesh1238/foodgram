@@ -95,16 +95,15 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'ingredients',
             'image',]
 
-    def _validate_ingredients(self, ingredients):
-        if not isinstance(ingredients, list) or not ingredients:
-            raise serializers.ValidationError(
-                "Ингредиенты обязательны и должны быть списком."
-            )
-        for ingredient in ingredients:
-            if "id" not in ingredient or "amount" not in ingredient:
-                raise serializers.ValidationError(
-                    "Каждый ингредиент должен содержать id и количество."
-                )
+    def validate_ingredients(self, value):
+        if not value:
+            raise serializers.ValidationError("Ingredients field cannot be empty.")
+
+        ingredient_ids = [ingredient['id'] for ingredient in value]
+        if not Ingredient.objects.filter(id__in=ingredient_ids).count() == len(ingredient_ids):
+            raise serializers.ValidationError("One or more ingredients do not exist.")
+
+        return value
 
     def create_ingredients(self, ingredients, recipe):
         for ingredient_data in ingredients:

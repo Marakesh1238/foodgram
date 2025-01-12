@@ -26,6 +26,11 @@ class IngredientListView(generics.ListAPIView):
         if name:
             queryset = queryset.filter(name__startswith=name)
         return queryset
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class IngredientDetailView(generics.RetrieveAPIView):
@@ -153,7 +158,17 @@ class FavoriteViewSet(viewsets.ViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class TagViewSet(viewsets.ReadOnlyModelViewSet):
+class TagListCreateView(generics.ListCreateAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class TagRetrieveView(generics.RetrieveAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
     lookup_field = 'id'

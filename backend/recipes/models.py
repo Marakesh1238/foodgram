@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import RegexValidator
 
 from api.constants import MAX_LENGTH, MAX_MEASURENENT_UNUT
 from users.models import User
@@ -13,8 +14,14 @@ class Ingredient(models.Model):
 
 
 class Tag(models.Model):
-    name = models.CharField(max_length=MAX_LENGTH)
-    slug = models.SlugField(unique=True)
+    name = models.CharField(max_length=32, unique=True)
+    slug = models.CharField(
+        max_length=32,
+        unique=True,
+        validators=[RegexValidator(r'^[-a-zA-Z0-9_]+$')],
+        null=True,
+        blank=True
+    )
 
     def __str__(self):
         return self.name

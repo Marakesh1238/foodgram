@@ -2,13 +2,14 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from users.views import UserViewSet
-from .views import (FavoriteViewSet, IngredientDetailView, IngredientListView,
-                    RecipeViewSet, ShoppingCartViewSet, TagViewSet)
+from .views import (FavoriteViewSet, IngredientDetailView,
+                    IngredientListView, RecipeViewSet,
+                    ShoppingCartViewSet, TagListCreateView,
+                    TagRetrieveView)
 
 
 router = DefaultRouter()
 router.register(r'recipes', RecipeViewSet, basename='recipe')
-router.register(r'tags', TagViewSet, basename='tag')
 router.register('users', UserViewSet, basename='users')
 
 
@@ -39,12 +40,18 @@ recipe_urlpatterns = [
          name='recipe-favorite'),
     path("ingredients/", IngredientListView.as_view(),
          name="ingredient-list"),
-    # Получение ингредиента по ID.
     path(
         "ingredients/<int:id>/",
         IngredientDetailView.as_view(),
         name="ingredient-detail",
     ),
+    path('tags/', TagListCreateView.as_view(),
+         name='tag-list-create'),
+    path('tags/<int:id>/', TagRetrieveView.as_view(),
+         name='tag-retrieve'),
+    path('recipes/<int:pk>/get-link/',
+         RecipeViewSet.as_view({'get': 'get_link'}),
+         name='recipe-get-link'),
 ]
 
 
