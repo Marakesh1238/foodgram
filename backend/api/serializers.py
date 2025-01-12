@@ -1,10 +1,9 @@
 from rest_framework import serializers
 
-from users.serializers import Base64ImageField
+from users.serializers import Base64ImageField, UserRecipesSerializer
 from recipes.models import (Favorite, Ingredient, Recipe,
                             RecipeIngredient,
                             ShoppingCart, Tag)
-from users.serializers import UserSerializer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -32,7 +31,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeSerializer(serializers.ModelSerializer):
-    author = UserSerializer(read_only=True)
+    author = UserRecipesSerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     ingredients = RecipeIngredientSerializer(many=True,
                                              source='recipeingredient_set')
@@ -97,12 +96,43 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
 
     def validate_ingredients(self, value):
         if not value:
-            raise serializers.ValidationError("Ingredients field cannot be empty.")
+            raise serializers.ValidationError(
+                "Ingredients field cannot be empty.")
 
         ingredient_ids = [ingredient['id'] for ingredient in value]
-        if not Ingredient.objects.filter(id__in=ingredient_ids).count() == len(ingredient_ids):
-            raise serializers.ValidationError("One or more ingredients do not exist.")
+        if not Ingredient.objects.filter(
+             id__in=ingredient_ids).count() == len(ingredient_ids):
+            raise serializers.ValidationError(
+                "One or more ingredients do not exist.")
 
+        for ingredient in value:
+            if ingredient['amount'] < 1:
+                raise serializers.ValidationError(
+                    (
+                        f"Количество ингредиента {ingredient['id']} "
+                        f"должно быть не меньше 1."
+                    )
+                )
+
+        return value
+
+    def validate_tags(self, value):
+        if not value:
+            raise serializers.ValidationError("Tags field cannot be empty.")
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError(
+                "Tags field contains duplicate tags.")
+        return value
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError("Image field cannot be empty.")
+        return value
+
+    def validate_cooking_time(self, value):
+        if value < 1:
+            raise serializers.ValidationError(
+                "Cooking time must be at least 1 minute.")
         return value
 
     def create_ingredients(self, ingredients, recipe):

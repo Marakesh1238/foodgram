@@ -173,3 +173,10 @@ class SubscriptionSerializer(ModelSerializer):
     def to_representation(self, instance):
         return SubscriptionShowSerializer(instance.author,
                                           context=self.context).data
+
+
+class UserRecipesSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name',
+                  'last_name', 'email', 'is_subscribed']
