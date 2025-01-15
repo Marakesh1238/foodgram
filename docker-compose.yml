@@ -20,8 +20,16 @@ services:
     volumes:
       - static:/backend_static
       - media:/app/media
+      - ./backend:/app
     ports:
       - "8000:8000"
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
+             python manage.py loaddata db.json &&
+             python manage.py load_ingredients /app/db1.json &&
+             python manage.py runserver 0.0.0.0:8000"
+
 
   frontend:
     env_file: .env
@@ -38,3 +46,4 @@ services:
       - media:/staticfiles/static/media/
     ports:
       - 8001:80
+
