@@ -8,8 +8,9 @@ from django.shortcuts import get_object_or_404
 
 from .filters import RecipeFilter, IngredientFilter
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
-from .serializers import (IngredientSerializer,
+from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeSerializer, RecipeCreateSerializer,
+                          RecipeShortSerializer,
                           TagSerializer)
 
 
@@ -89,8 +90,8 @@ class ShoppingCartViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['get'], url_path='download_shopping_cart')
     def download_shopping_cart(self, request):
         user = request.user
-        shopping_cart = ShoppingCart.objects.get(user=user)
-        recipes = shopping_cart.recipes.all()
+        shopping_cart = ShoppingCart.objects.filter(user=user)
+        recipes = [item.recipe for item in shopping_cart if item.recipe]
 
         # Создание CSV файла
         output = StringIO()
@@ -103,30 +104,45 @@ class ShoppingCartViewSet(viewsets.ViewSet):
         output.seek(0)
         response = FileResponse(output, content_type='text/csv')
         response['Content-Disposition'] = (
-            'attachment; filename="shopping_cart.csv"')
+            'attachment; '
+            'filename="shopping_cart.csv"'
+        )
         return response
 
     @action(detail=True, methods=['post'], url_path='shopping_cart')
     def add_to_shopping_cart(self, request, pk=None):
         user = request.user
-        recipe = Recipe.objects.get(pk=pk)
-        shopping_cart, created = ShoppingCart.objects.get_or_create(user=user)
-        if recipe in shopping_cart.recipes.all():
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response({"detail": "Recipe not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        shopping_cart, created = ShoppingCart.objects.get_or_create(
+            user=user, recipe=recipe)
+        if not created:
             return Response({"detail": "Recipe already in shopping cart."},
                             status=status.HTTP_400_BAD_REQUEST)
-        shopping_cart.recipes.add(recipe)
-        return Response(RecipeSerializer(recipe).data,
+
+        return Response(RecipeShortSerializer(recipe).data,
                         status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'], url_path='shopping_cart')
     def remove_from_shopping_cart(self, request, pk=None):
         user = request.user
-        recipe = Recipe.objects.get(pk=pk)
-        shopping_cart = ShoppingCart.objects.get(user=user)
-        if recipe not in shopping_cart.recipes.all():
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response({"detail": "Recipe not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            shopping_cart = ShoppingCart.objects.get(user=user, recipe=recipe)
+        except ShoppingCart.DoesNotExist:
             return Response({"detail": "Recipe not in shopping cart."},
                             status=status.HTTP_400_BAD_REQUEST)
-        shopping_cart.recipes.remove(recipe)
+
+        shopping_cart.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -136,14 +152,16 @@ class FavoriteViewSet(viewsets.ViewSet):
     @action(detail=True, methods=['post'], url_path='favorite')
     def add_to_favorite(self, request, pk=None):
         user = request.user
-        recipe = Recipe.objects.get(pk=pk)
-        favorite, created = Favorite.objects.get_or_create(user=user,
-                                                           recipe=recipe)
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response({"detail": "Recipe not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        favorite, created = Favorite.objects.get_or_create(user=user, recipe=recipe)
         if not created:
-            return Response({"detail": "Recipe already in favorites."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        return Response(RecipeSerializer(recipe).data,
-                        status=status.HTTP_201_CREATED)
+            return Response({"detail": "Recipe already in favorites."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(FavoriteSerializer(favorite).data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['delete'], url_path='favorite')
     def remove_from_favorite(self, request, pk=None):

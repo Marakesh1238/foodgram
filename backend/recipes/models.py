@@ -1,5 +1,6 @@
 from django.db import models
 from django.core.validators import RegexValidator
+from django.conf import settings
 
 from api.constants import MAX_LENGTH, MAX_MEASURENENT_UNUT
 from users.models import User
@@ -61,34 +62,63 @@ class RecipeIngredient(models.Model):
 
 
 class ShoppingCart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    recipes = models.ManyToManyField(Recipe, related_name='shopping_carts')
+    """Модель для списка покупок пользователя. """
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='shopping_cart',
+        verbose_name='Пользователь',
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='in_shopping_cart',
+        verbose_name='Рецепт',
+
+    )
+
+    class Meta:
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Список покупок'
+        ordering = ['user', 'recipe']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'], name='unique_user_recipe_in_cart'
+            )
+        ]
 
     def __str__(self):
-        return f"Shopping Cart for {self.user.username}"
+        return f'{self.recipe.name} в списке покупок у {self.user.username}'
 
 
 class Favorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    recipe = models.ForeignKey(Recipe, on_delete=models.CASCADE)
+    """Модель для избранных рецептов пользователей."""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='favorites',
+        verbose_name='Пользователь',
+    )
+    recipe = models.ForeignKey(
+        Recipe,
+        on_delete=models.CASCADE,
+        related_name='favorited_by',
+        verbose_name='Рецепт',
+    )
+    created_at = models.DateTimeField(
+        'Дата добавления',
+        auto_now_add=True,
+    )
 
     class Meta:
-        unique_together = ('user', 'recipe')
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные рецепты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'], name='unique_favorite'
+            )
+        ]
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user.username} likes {self.recipe.name}"
-
-
-class Subscription(models.Model):
-    user = models.ForeignKey(User,
-                             related_name='subscriptions',
-                             on_delete=models.CASCADE)
-    author = models.ForeignKey(User,
-                               related_name='followers',
-                               on_delete=models.CASCADE)
-
-    class Meta:
-        unique_together = ('user', 'author')
-
-    def __str__(self):
-        return f"{self.user.username} follows {self.author.username}"
+        return f'{self.user.username} добавил в избранное {self.recipe.name}'
