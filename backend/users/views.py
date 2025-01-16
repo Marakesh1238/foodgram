@@ -10,7 +10,8 @@ from rest_framework.status import (
     HTTP_200_OK,
     HTTP_201_CREATED,
     HTTP_204_NO_CONTENT,
-    HTTP_400_BAD_REQUEST
+    HTTP_400_BAD_REQUEST,
+    HTTP_401_UNAUTHORIZED
 )
 
 from users.paginations import CustomUserPagination
@@ -51,6 +52,10 @@ class UserViewSet(UserViewSet):
 
     @me.mapping.get
     def me_get(self, request):
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=HTTP_401_UNAUTHORIZED)
         serializer = UserSerializer(
             request.user, context={'request': request}
         )

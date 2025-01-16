@@ -21,17 +21,6 @@ auth_urlpatterns = [
 
 recipe_urlpatterns = [
     path('', include(router.urls)),
-    path('recipes/<int:pk>/shopping_cart/',
-         ShoppingCartViewSet.as_view({
-             'post': 'add_to_shopping_cart',
-             'delete': 'remove_from_shopping_cart'
-         }),
-         name='recipe-shopping-cart'),
-    path('recipes/download_shopping_cart/',
-         ShoppingCartViewSet.as_view({
-             'get': 'download_shopping_cart'
-         }),
-         name='download-shopping-cart'),
     path('recipes/<int:pk>/favorite/',
          FavoriteViewSet.as_view({
              'post': 'add_to_favorite',

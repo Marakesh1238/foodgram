@@ -1,10 +1,13 @@
 import csv
-from io import StringIO
+from io import StringIO, BytesIO
 from django.http import FileResponse
+from rest_framework.viewsets import ModelViewSet
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly   
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 
 from .filters import RecipeFilter, IngredientFilter
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
@@ -43,11 +46,17 @@ class IngredientDetailView(generics.RetrieveAPIView):
     filterset_class = IngredientFilter
 
 
-class RecipeViewSet(viewsets.ModelViewSet):
+class RecipeViewSet(ModelViewSet):
     queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
-    permission_classes = []
     filterset_class = RecipeFilter
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'download_shopping_cart', 'manage_shopping_cart']:
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [IsAuthenticatedOrReadOnly]
+        return [permission() for permission in permission_classes]
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -83,11 +92,8 @@ class RecipeViewSet(viewsets.ModelViewSet):
         short_link = f"https://{request.get_host()}/recipes/{recipe.id}"
         return Response({'short-link': short_link}, status=status.HTTP_200_OK)
 
-
-class ShoppingCartViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @action(detail=False, methods=['get'], url_path='download_shopping_cart')
+    @action(detail=False, methods=['get'], url_path='download_shopping_cart',
+            permission_classes=[permissions.IsAuthenticated])
     def download_shopping_cart(self, request):
         user = request.user
         shopping_cart = ShoppingCart.objects.filter(user=user)
@@ -102,12 +108,63 @@ class ShoppingCartViewSet(viewsets.ViewSet):
                              recipe.image.url, recipe.cooking_time])
 
         output.seek(0)
-        response = FileResponse(output, content_type='text/csv')
+        response = FileResponse(BytesIO(output.getvalue().encode('utf-8')), content_type='text/csv')
         response['Content-Disposition'] = (
             'attachment; '
             'filename="shopping_cart.csv"'
         )
         return response
+
+    @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart',
+            permission_classes=[permissions.IsAuthenticated])
+    def manage_shopping_cart(self, request, pk=None):
+        user = request.user
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response({"detail": "Recipe not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'POST':
+            shopping_cart, created = ShoppingCart.objects.get_or_create(
+                user=user, recipe=recipe)
+            if not created:
+                return Response({"detail": "Recipe already in shopping cart."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return Response(RecipeShortSerializer(recipe).data,
+                            status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            try:
+                shopping_cart = ShoppingCart.objects.get(user=user, recipe=recipe)
+            except ShoppingCart.DoesNotExist:
+                return Response({"detail": "Recipe not in shopping cart."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            shopping_cart.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if instance.author != request.user:
+            raise PermissionDenied("You do not have permission to update this recipe.")
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        if instance.author != self.request.user:
+            raise PermissionDenied("You do not have permission to delete this recipe.")
+        instance.delete()
+
+
+class ShoppingCartViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
 
     @action(detail=True, methods=['post'], url_path='shopping_cart')
     def add_to_shopping_cart(self, request, pk=None):
