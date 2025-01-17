@@ -1,11 +1,12 @@
 import csv
 from io import StringIO, BytesIO
 from django.http import FileResponse
+from .permissions import IsAuthenticatedOr401
 from rest_framework.viewsets import ModelViewSet
 from rest_framework import viewsets, permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly   
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 
@@ -13,7 +14,7 @@ from .filters import RecipeFilter, IngredientFilter
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
 from .serializers import (FavoriteSerializer, IngredientSerializer,
                           RecipeSerializer, RecipeCreateSerializer,
-                          RecipeShortSerializer,
+                          RecipeShortSerializer, ShoppingCartSerializer,
                           TagSerializer)
 
 
@@ -52,8 +53,10 @@ class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update', 'destroy', 'download_shopping_cart', 'manage_shopping_cart']:
-            permission_classes = [IsAuthenticated]
+        if self.action in ['create', 'update', 'partial_update',
+                           'destroy', 'download_shopping_cart',
+                           'manage_shopping_cart']:
+            permission_classes = [IsAuthenticatedOr401]
         else:
             permission_classes = [IsAuthenticatedOrReadOnly]
         return [permission() for permission in permission_classes]
@@ -115,10 +118,16 @@ class RecipeViewSet(ModelViewSet):
         )
         return response
 
-    @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart',
+    @action(detail=True, methods=['post', 'delete', 'get'], url_path='shopping_cart',
             permission_classes=[permissions.IsAuthenticated])
     def manage_shopping_cart(self, request, pk=None):
         user = request.user
+
+        if request.method == 'GET':
+            shopping_cart = ShoppingCart.objects.filter(user=user)
+            serializer = ShoppingCartSerializer(shopping_cart, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
         try:
             recipe = Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:
@@ -142,6 +151,40 @@ class RecipeViewSet(ModelViewSet):
                                 status=status.HTTP_400_BAD_REQUEST)
             shopping_cart.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['post', 'delete', 'get'], url_path='favorite',
+            permission_classes=[permissions.IsAuthenticated])
+    def manage_favorite(self, request, pk=None):
+        user = request.user
+
+        if request.method == 'GET':
+            favorites = Favorite.objects.filter(user=user)
+            serializer = FavoriteSerializer(favorites, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        try:
+            recipe = Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            return Response({"detail": "Recipe not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == 'POST':
+            favorite, created = Favorite.objects.get_or_create(
+                user=user, recipe=recipe)
+            if not created:
+                return Response({"detail": "Recipe already in favorites."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            return Response(RecipeShortSerializer(recipe).data,
+                            status=status.HTTP_201_CREATED)
+
+        elif request.method == 'DELETE':
+            try:
+                favorite = Favorite.objects.get(user=user, recipe=recipe)
+            except Favorite.DoesNotExist:
+                return Response({"detail": "Recipe not in favorites."},
+                                status=status.HTTP_400_BAD_REQUEST)
+            favorite.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -160,47 +203,6 @@ class RecipeViewSet(ModelViewSet):
         if instance.author != self.request.user:
             raise PermissionDenied("You do not have permission to delete this recipe.")
         instance.delete()
-
-
-class ShoppingCartViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
-
-
-    @action(detail=True, methods=['post'], url_path='shopping_cart')
-    def add_to_shopping_cart(self, request, pk=None):
-        user = request.user
-        try:
-            recipe = Recipe.objects.get(pk=pk)
-        except Recipe.DoesNotExist:
-            return Response({"detail": "Recipe not found."},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        shopping_cart, created = ShoppingCart.objects.get_or_create(
-            user=user, recipe=recipe)
-        if not created:
-            return Response({"detail": "Recipe already in shopping cart."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        return Response(RecipeShortSerializer(recipe).data,
-                        status=status.HTTP_201_CREATED)
-
-    @action(detail=True, methods=['delete'], url_path='shopping_cart')
-    def remove_from_shopping_cart(self, request, pk=None):
-        user = request.user
-        try:
-            recipe = Recipe.objects.get(pk=pk)
-        except Recipe.DoesNotExist:
-            return Response({"detail": "Recipe not found."},
-                            status=status.HTTP_404_NOT_FOUND)
-
-        try:
-            shopping_cart = ShoppingCart.objects.get(user=user, recipe=recipe)
-        except ShoppingCart.DoesNotExist:
-            return Response({"detail": "Recipe not in shopping cart."},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        shopping_cart.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FavoriteViewSet(viewsets.ViewSet):

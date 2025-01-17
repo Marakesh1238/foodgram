@@ -36,7 +36,7 @@ class RecipeSerializer(serializers.ModelSerializer):
     ingredients = RecipeIngredientSerializer(many=True,
                                              source='recipeingredient_set')
     is_favorited = serializers.BooleanField(default=False, read_only=True)
-    in_shopping_cart = serializers.SerializerMethodField(
+    is_in_shopping_cart = serializers.SerializerMethodField(
         default=False, read_only=True)
 
     class Meta:
@@ -47,7 +47,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             'author',
             'ingredients',
             'is_favorited',
-            'in_shopping_cart',
+            'is_in_shopping_cart',
             'name',
             'image',
             'text',
@@ -59,7 +59,7 @@ class RecipeSerializer(serializers.ModelSerializer):
             return False
         return obj.favorites.filter(user=request.user).exists()
 
-    def get_in_shopping_cart(self, obj):
+    def get_is_in_shopping_cart(self, obj):
         request = self.context.get('request')
         if request is None or not request.user.is_authenticated:
             return False
@@ -189,22 +189,6 @@ class ShoppingCartSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShoppingCart
         fields = ["id", "user", "recipe"]
-
-    def validate(self, data):
-        """Проверяем, что рецепт ещё не в списке покупок пользователя."""
-        user = self.context["request"].user
-        recipe = data.get("recipe")
-        if recipe and ShoppingCart.objects.filter(
-                user=user, recipe=recipe).exists():
-            raise serializers.ValidationError("Рецепт уже в списке покупок!")
-        return data
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        recipe = validated_data.get("recipe")
-        shopping_cart, created = ShoppingCart.objects.get_or_create(
-            user=user, recipe=recipe)
-        return shopping_cart
 
 
 class RecipeShortSerializer(serializers.ModelSerializer):
