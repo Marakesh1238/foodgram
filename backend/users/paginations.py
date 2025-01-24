@@ -1,5 +1,4 @@
 from rest_framework.pagination import PageNumberPagination
-
 from api.constants import MAX_PER_PAGE, PER_PAGE
 
 

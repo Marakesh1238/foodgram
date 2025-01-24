@@ -2,8 +2,7 @@ from rest_framework import serializers
 
 from users.serializers import Base64ImageField, UserRecipesSerializer
 from recipes.models import (Favorite, Ingredient, Recipe,
-                            RecipeIngredient,
-                            ShoppingCart, Tag)
+                            RecipeIngredient, ShoppingCart, Tag)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -180,31 +179,31 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             }).data
 
 
-class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели ShoppingCart."""
-
-    recipe = serializers.PrimaryKeyRelatedField(
-        queryset=Recipe.objects.all(), allow_null=True, required=False)
+class ShoppingListSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели ShoppingList."""
 
     class Meta:
         model = ShoppingCart
         fields = ["id", "user", "recipe"]
 
 
-class RecipeShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Recipe
-        fields = ['id', 'name', 'image', 'cooking_time']
+class ShoppingCartSerializer(serializers.ModelSerializer):
+    """Сериализатор для модели ShoppingCart."""
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['image'] = instance.image.url if instance.image else ''
-        return {
-            "id": representation['id'],
-            "name": representation['name'],
-            "image": representation['image'],
-            "cooking_time": representation['cooking_time']
-        }
+    recipe = serializers.PrimaryKeyRelatedField(
+        queryset=Recipe.objects.all())
+
+    class Meta:
+        model = ShoppingCart
+        fields = ["id", "user", "recipe"]
+
+    def validate(self, data):
+        """Проверяем, что рецепт ещё не в списке покупок пользователя."""
+        user = self.context["request"].user
+        recipe = data["recipe"]
+        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
+            raise serializers.ValidationError("Рецепт уже в списке покупок!")
+        return data
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
@@ -221,13 +220,3 @@ class FavoriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favorite
         fields = ["id", "name", "image", "cooking_time"]
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['image'] = instance.recipe.image.url if instance.recipe.image else ''
-        return {
-            "id": representation['id'],
-            "name": representation['name'],
-            "image": representation['image'],
-            "cooking_time": representation['cooking_time']
-        }
