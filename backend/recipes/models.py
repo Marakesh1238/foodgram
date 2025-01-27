@@ -1,6 +1,5 @@
 from django.db import models
 from django.core.validators import RegexValidator
-from django.conf import settings
 
 from api.constants import MAX_LENGTH, MAX_MEASURENENT_UNUT
 from users.models import User
@@ -39,8 +38,6 @@ class Recipe(models.Model):
     name = models.CharField(max_length=MAX_LENGTH)
     text = models.TextField()
     cooking_time = models.PositiveIntegerField()
-    is_in_shopping_cart = models.BooleanField(default=False)
-    is_favorited = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -72,7 +69,7 @@ class ShoppingCart(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='in_shopping_cart',
+        related_name='is_in_shopping_cart',
         verbose_name='Рецепт',
 
     )
@@ -94,7 +91,7 @@ class ShoppingCart(models.Model):
 class Favorite(models.Model):
     """Модель для избранных рецептов пользователей."""
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        User,
         on_delete=models.CASCADE,
         related_name='favorites',
         verbose_name='Пользователь',
@@ -102,7 +99,7 @@ class Favorite(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
-        related_name='favorited_by',
+        related_name='is_favorited',
         verbose_name='Рецепт',
     )
     created_at = models.DateTimeField(
