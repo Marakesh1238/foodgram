@@ -3,3 +3,4 @@ POSTGRES_PASSWORD=mysecretpassword
 POSTGRES_DB=django
 DB_HOST=db
 DB_PORT=5432
+ALLOWED_HOSTS=foodgramv123.ddns.net,localhost,127.0.0.1
