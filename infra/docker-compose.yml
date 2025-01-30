@@ -1,4 +1,3 @@
-
 services:
   db:
     image: postgres:13.10
@@ -13,9 +12,9 @@ services:
       - db
     command: >
       sh -c "python manage.py makemigrations &&
-             python manage.py migrate &&
-             python manage.py loaddata db.json &&
-             python manage.py load_ingredients /app/db1.json &&
+             python manage.py migrate || echo 'Migrations already applied';
+             python manage.py loaddata db.json || echo 'Data already loaded';
+             python manage.py load_ingredients /app/db1.json || echo 'Ingredients already loaded';
              gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000"
     volumes:
       - static:/backend_static
@@ -26,9 +25,9 @@ services:
   frontend:
     container_name: foodgram-front
     build: ../frontend
-    command: cp -r /app/build/. /frontend_static/
+    command: cp -r /app/build/. /static/
     volumes:
-      - static:/app/result_build
+      - static:/static/
 
   nginx:
     container_name: foodgram-proxy
@@ -36,8 +35,8 @@ services:
       context: ./
       dockerfile: Dockerfile
     volumes:
-      - static:/staticfiles/
-      - media:/staticfiles/static/media/
+      - static:/static/
+      - media:/media/
     ports:
       - "8001:80"
     environment:

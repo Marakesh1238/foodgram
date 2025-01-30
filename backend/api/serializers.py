@@ -180,22 +180,15 @@ class ShoppingListSerializer(serializers.ModelSerializer):
 
 
 class ShoppingCartSerializer(serializers.ModelSerializer):
-    """Сериализатор для модели ShoppingCart."""
-
-    recipe = serializers.PrimaryKeyRelatedField(
-        queryset=Recipe.objects.all())
-
     class Meta:
         model = ShoppingCart
-        fields = ["id", "user", "recipe"]
+        fields = ('user', 'recipe')
 
-    def validate(self, data):
-        """Проверяем, что рецепт ещё не в списке покупок пользователя."""
-        user = self.context["request"].user
-        recipe = data["recipe"]
-        if ShoppingCart.objects.filter(user=user, recipe=recipe).exists():
-            raise serializers.ValidationError("Рецепт уже в списке покупок!")
-        return data
+    def validate(self, attrs):
+        if ShoppingCart.objects.filter(user=attrs['user'],
+                                       recipe=attrs['recipe']).exists():
+            raise serializers.ValidationError("Рецепт уже в корзине.")
+        return attrs
 
 
 class FavoriteSerializer(serializers.ModelSerializer):

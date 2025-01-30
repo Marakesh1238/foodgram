@@ -2,7 +2,6 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework import permissions, status, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
@@ -10,7 +9,7 @@ from collections import defaultdict
 from django.http import HttpResponse
 from .pagination import LimitPageNumberPagination
 
-from .permissions import IsAuthenticatedOr401
+from .permissions import IsAuthorOrReadOnly
 from .filters import RecipeFilter, IngredientFilter
 from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
 from .serializers import (IngredientSerializer,
@@ -52,49 +51,8 @@ class RecipeViewSet(ModelViewSet):
     serializer_class = RecipeSerializer
     filterset_class = RecipeFilter
     pagination_class = LimitPageNumberPagination
-
-    def get_permissions(self):
-        if self.action in ['create', 'update', 'partial_update',
-                           'destroy', 'download_shopping_cart']:
-            permission_classes = [IsAuthenticatedOr401]
-        else:
-            permission_classes = [IsAuthenticatedOrReadOnly]
-        return [permission() for permission in permission_classes]
-
-    def get_queryset(self):
-        user = self.request.user
-        queryset = super().get_queryset()
-
-        # Применяем сортировку
-        queryset = queryset.order_by('id')
-
-        if user.is_authenticated:
-            # Получаем параметры фильтрации из запроса
-            is_favorited = self.request.query_params.get('is_favorited')
-            is_in_shopping_cart = self.request.query_params.get(
-                'is_in_shopping_cart')
-            # Фильтрация по избранному
-            if is_favorited is not None:
-                if is_favorited == '1':
-                    queryset = queryset.filter(is_favorited__user=user)
-                elif is_favorited == '0':
-                    queryset = queryset.exclude(is_favorited__user=user)
-            # Фильтрация по корзине
-            if is_in_shopping_cart is not None:
-                if is_in_shopping_cart == '1':
-                    queryset = queryset.filter(is_in_shopping_cart__user=user)
-                elif is_in_shopping_cart == '0':
-                    queryset = queryset.exclude(is_in_shopping_cart__user=user)
-
-        return queryset
-
-    def list(self, request, *args, **kwargs):
-        """
-        Получаем список рецептов с возможностью фильтрации.
-        """
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    permission_classes = (IsAuthorOrReadOnly,
+                          permissions.IsAuthenticatedOrReadOnly)
 
     def get_serializer_class(self):
         if self.action in ['create', 'update', 'partial_update']:
@@ -216,6 +174,12 @@ class TagListCreateView(generics.ListCreateAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        return Response(
+            {"error": "Method Not Allowed"},
+            status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
 
 
 class TagRetrieveView(generics.RetrieveAPIView):

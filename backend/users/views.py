@@ -36,30 +36,34 @@ class UserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=('patch',),
+        methods=['get', 'patch'],
         url_path='me',
         url_name='me',
-        permission_classes=(IsAuthenticated,)
     )
     def me(self, request):
-        serializer = UserSerializer(
-            request.user, data=request.data,
-            partial=True, context={'request': request}
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=HTTP_200_OK)
-
-    @me.mapping.get
-    def me_get(self, request):
+        # Проверка, что пользователь аутентифицирован
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Authentication credentials were not provided."},
-                status=HTTP_401_UNAUTHORIZED)
-        serializer = UserSerializer(
-            request.user, context={'request': request}
-        )
-        return Response(serializer.data, status=HTTP_200_OK)
+                status=HTTP_401_UNAUTHORIZED
+            )
+
+        if request.method == 'GET':
+            # Обработка GET-запроса
+            serializer = UserSerializer(
+                request.user, context={'request': request}
+            )
+            return Response(serializer.data, status=HTTP_200_OK)
+
+        elif request.method == 'PATCH':
+            # Обработка PATCH-запроса (обновление данных пользователя)
+            serializer = UserSerializer(
+                request.user, data=request.data,
+                partial=True, context={'request': request}
+            )
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=HTTP_200_OK)
 
     @action(
         detail=True,
@@ -113,9 +117,16 @@ class UserViewSet(UserViewSet):
         detail=False,
         methods=('delete',),
         url_path='me/avatar',
-        permission_classes=(IsAuthenticated,)
     )
     def update_avatar(self, request):
+        # Поскольку IsAuthenticated уже защищает это действие, можно не делать дополнительную проверку
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=HTTP_401_UNAUTHORIZED
+            )
+        
+        # Удаление аватара
         user = request.user
         user.avatar = None
         user.save()
@@ -123,9 +134,19 @@ class UserViewSet(UserViewSet):
 
     @update_avatar.mapping.put
     def avatar(self, request):
+        # Проверка на авторизацию (на самом деле это не нужно, так как IsAuthenticated уже это проверяет)
+        if not request.user.is_authenticated:
+            return Response(
+                {"detail": "Authentication credentials were not provided."},
+                status=HTTP_401_UNAUTHORIZED
+            )
+
+        # Проверка наличия поля 'avatar' в запросе
         if 'avatar' not in request.data:
             return Response({'detail': 'Поле аватар обязательно.'},
                             status=HTTP_400_BAD_REQUEST)
+
+        # Сериализация и сохранение аватара
         serializer = AvatarSerializer(request.user,
                                       data=request.data,
                                       partial=True)

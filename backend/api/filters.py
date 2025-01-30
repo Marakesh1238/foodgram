@@ -1,7 +1,7 @@
+import django_filters
 import django_filters as filters
 from django.core.exceptions import ValidationError
-from recipes.models import Ingredient, Recipe
-from users.models import User
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 
 
 class TagsMultipleChoiceField(
@@ -31,19 +31,36 @@ class IngredientFilter(filters.FilterSet):
         fields = ('name',)
 
 
-class RecipeFilter(filters.FilterSet):
-    author = filters.ModelChoiceFilter(
-        queryset=User.objects.all())
-    is_in_shopping_cart = filters.BooleanFilter(
-        widget=filters.widgets.BooleanWidget(),
-        label='В корзине.')
-    is_favorited = filters.BooleanFilter(
-        widget=filters.widgets.BooleanWidget(),
-        label='В избранных.')
-    tags = filters.AllValuesMultipleFilter(
+class RecipeFilter(django_filters.FilterSet):
+    tags = django_filters.ModelMultipleChoiceFilter(
         field_name='tags__slug',
-        label='Ссылка')
+        queryset=Tag.objects.all(),
+        to_field_name='slug',
+    )
+    is_in_shopping_cart = django_filters.CharFilter(
+        method='filter_is_in_shopping_cart')
+    is_favorited = django_filters.CharFilter(method='filter_is_favorited')
 
     class Meta:
         model = Recipe
-        fields = ['is_favorited', 'is_in_shopping_cart', 'author', 'tags']
+        fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
+
+    def filter_is_favorited(self, queryset, name, value):
+        user = self.request.user
+        if not user.is_authenticated:
+            return queryset
+        favorite_recipes = Favorite.objects.filter(
+            user=user).values_list('recipe', flat=True)
+        if value:
+            return queryset.filter(id__in=favorite_recipes)
+        return queryset
+
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        user = self.request.user
+        if not user.is_authenticated:
+            return queryset
+        shopping_cart_recipes = ShoppingCart.objects.filter(
+            user=user).values_list('recipe', flat=True)
+        if value:
+            return queryset.filter(id__in=shopping_cart_recipes)
+        return queryset

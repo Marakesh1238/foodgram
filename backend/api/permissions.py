@@ -1,11 +1,7 @@
-from rest_framework.exceptions import AuthenticationFailed
-from rest_framework.permissions import BasePermission
+from rest_framework import permissions
 
 
-class IsAuthenticatedOr401(BasePermission):
-    def has_permission(self, request, view):
-        if not request.user or not request.user.is_authenticated:
-            raise AuthenticationFailed(
-                'Authentication credentials were not provided.'
-            )
-        return True
+class IsAuthorOrReadOnly(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return (obj.author == request.user
+                or request.method in permissions.SAFE_METHODS)
