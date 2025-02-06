@@ -1,20 +1,20 @@
-from rest_framework.viewsets import ModelViewSet
-from rest_framework import permissions, status, generics
-from rest_framework.response import Response
-from rest_framework.decorators import action
+from collections import defaultdict
+
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, status
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
-from collections import defaultdict
-from django.http import HttpResponse
-from .pagination import LimitPageNumberPagination
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
+from .filters import IngredientFilter, RecipeFilter
+from .pagination import LimitPageNumberPagination
 from .permissions import IsAuthorOrReadOnly
-from .filters import RecipeFilter, IngredientFilter
-from recipes.models import Favorite, Recipe, ShoppingCart, Tag, Ingredient
-from .serializers import (IngredientSerializer,
-                          RecipeSerializer, RecipeCreateSerializer,
-                          TagSerializer)
+from .serializers import (IngredientSerializer, RecipeCreateSerializer,
+                          RecipeSerializer, TagSerializer)
 
 
 class IngredientListView(generics.ListAPIView):
@@ -98,7 +98,9 @@ class RecipeViewSet(ModelViewSet):
 
         # Собираем ингредиенты из рецептов
         for cart_item in shopping_cart:
-            for recipe_ingredient in cart_item.recipe.recipeingredient_set.all():
+            for recipe_ingredient in (
+                cart_item.recipe.recipeingredient_set.all()
+            ):
                 ingredient = recipe_ingredient.ingredient
                 ingredients[ingredient.name] += recipe_ingredient.amount
 
@@ -107,7 +109,8 @@ class RecipeViewSet(ModelViewSet):
             f"{name} — {amount}\n" for name, amount in ingredients.items()
         ]
         response = HttpResponse("".join(lines), content_type="text/plain")
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.txt"')
         return response
 
     @action(detail=True, methods=['post', 'delete'],
@@ -140,7 +143,8 @@ class RecipeViewSet(ModelViewSet):
             permission_classes=[permissions.IsAuthenticated])
     def get_link(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
-        short_link = f"https://{request.get_host()}/recipes/{recipe.id}"
+        short_link = "https://" + request.get_host(
+        ) + "/recipes/" + str(recipe.id)
         return Response({'short-link': short_link}, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
