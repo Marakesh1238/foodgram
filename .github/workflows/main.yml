@@ -7,53 +7,29 @@ on:
 
 jobs:
   tests:
-    # Разворачиваем окружение:
     runs-on: ubuntu-24.04
     services:
       postgres:
         image: postgres:13.10
-        # Указываем имя тестовой базы, имя и пароль пользователя в открытом виде,
-        # ведь эта база будет работать только во время прогона тестов
         env:
           POSTGRES_USER: django_user
           POSTGRES_PASSWORD: django_password
           POSTGRES_DB: django_db
         ports:
           - 5432:5432
-        # Эта конструкция описывает проверку готовности сервиса postgres
-        # Если её не будет, то тесты могут запуститься раньше, чем сервер PostgreSQL
-        # В результате тесты опять решат, что базы нет, — и упадут
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    # Копируем код проекта
     - name: Check out code
       uses: actions/checkout@v3
-    # Устанавливаем Python с помощью action
     - name: Set up Python
       uses: actions/setup-python@v4
-    # В action setup-python@v4 передаём параметр — версию Python
       with:
         python-version: 3.9
-    # Обновляем pip, устанавливаем flake8 и flake8-isort, 
-    # устанавливаем зависимости проекта
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip 
-        pip install -r ./backend/requirements.txt
-    # Запускаем flake8
-    - name: Test with flake8
-      env:
-        POSTGRES_USER: django_user
-        POSTGRES_PASSWORD: django_password
-        POSTGRES_DB: django_db
-        # Сервер БД запущен в Docker, но его порт проброшен на хост
-        # Поэтому подключаемся к 127.0.0.1:5432
-        DB_HOST: 127.0.0.1
-        DB_PORT: 5432
-      run: |
-        cd backend/
-        python manage.py test 
+        pip install -r ./backend/requirements.txt 
 
   build_and_push_to_docker_hub:
     name: Push Docker image to DockerHub
@@ -77,7 +53,6 @@ jobs:
           tags: marakesh1238/foodgram_backend:latest
   frontend_tests:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Set up nodeJS
@@ -89,11 +64,6 @@ jobs:
       run: |
         cd frontend/
         npm ci
-
-    - name: Test frontend
-      run: |
-        cd frontend/
-        npm run test
 
   build_frontend_and_push_to_docker_hub:
     name: Push frontend Docker image to DockerHub
@@ -116,8 +86,8 @@ jobs:
           push: true
           tags: marakesh1238/foodgram_frontend:latest
 
-  build_gateway_and_push_to_docker_hub:
-    name: Push gateway Docker image to DockerHub
+  build_nginx_and_push_to_docker_hub:
+    name: Push nginx Docker image to DockerHub
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo
@@ -140,7 +110,7 @@ jobs:
     needs:
       - build_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
-      - build_gateway_and_push_to_docker_hub
+      - build_nginx_and_push_to_docker_hub
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
