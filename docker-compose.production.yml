@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:13.10
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    image: marakesh1238/foodgram_backend
+    env_file: .env
+    depends_on:
+      - db
+    command: >
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate || echo 'Migrations already applied';
+             python manage.py loaddata db.json || echo 'Data already loaded';
+             python manage.py load_ingredients /app/db1.json || echo 'Ingredients already loaded';
+             gunicorn foodgram.wsgi:application --bind 0.0.0.0:8000"
+    volumes:
+      - static:/backend_static
+      - media:/app/media
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: marakesh1238/foodgram_frontend
+    command: cp -r /app/build/. /static/
+    volumes:
+      - static:/static/
+
+  nginx:
+    image: marakesh1238/foodgram_nginx
+    volumes:
+      - static:/static/
+      - media:/media/
+    ports:
+      - "8001:80"
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:
+  static:
+  media:
