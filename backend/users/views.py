@@ -119,13 +119,11 @@ class UserViewSet(UserViewSet):
         url_path='me/avatar',
     )
     def update_avatar(self, request):
-        # Поскольку IsAuthenticated уже защищает это действие, можно не делать дополнительную проверку
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Authentication credentials were not provided."},
                 status=HTTP_401_UNAUTHORIZED
             )
-        
         # Удаление аватара
         user = request.user
         user.avatar = None
@@ -134,13 +132,11 @@ class UserViewSet(UserViewSet):
 
     @update_avatar.mapping.put
     def avatar(self, request):
-        # Проверка на авторизацию (на самом деле это не нужно, так как IsAuthenticated уже это проверяет)
         if not request.user.is_authenticated:
             return Response(
                 {"detail": "Authentication credentials were not provided."},
                 status=HTTP_401_UNAUTHORIZED
             )
-
         # Проверка наличия поля 'avatar' в запросе
         if 'avatar' not in request.data:
             return Response({'detail': 'Поле аватар обязательно.'},
