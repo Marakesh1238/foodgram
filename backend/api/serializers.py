@@ -83,7 +83,7 @@ class RecipeCreateSerializer(serializers.ModelSerializer):
             'cooking_time',
             'tags',
             'ingredients',
-            'image',]
+            'image', ]
 
     def validate_ingredients(self, value):
         if not value:
