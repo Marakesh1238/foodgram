@@ -46,7 +46,7 @@ class Subscription(models.Model):
                                   verbose_name='Автор')
 
     class Meta:
-        ordering = ('id',)
+        ordering = ['follower', 'following']
         constraints = (
             models.UniqueConstraint(
                 fields=['follower', 'following'],
