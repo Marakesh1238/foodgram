@@ -1,5 +1,5 @@
 from rest_framework.pagination import PageNumberPagination
-
+from .constants import MAX_PER_PAGE, PER_PAGE
 
 class LimitPageNumberPagination(PageNumberPagination):
     page_size = 6

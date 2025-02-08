@@ -1,10 +1,9 @@
-from collections import defaultdict
-
 from django.http import HttpResponse
 from rest_framework import generics, permissions, status
 from rest_framework.viewsets import ModelViewSet
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
+from django.db.models import Sum
 from rest_framework.decorators import action
 from rest_framework.exceptions import ParseError
 from rest_framework.filters import SearchFilter
@@ -26,7 +25,7 @@ from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeSerializer, TagSerializer, AvatarSerializer,
                           SubscriptionSerializer,
                           SubscriptionShowSerializer,
-                          UserSerializer, UserCreateSerializer)
+                          UserSerializer,RecipeIngredient ,UserCreateSerializer)
 from users.models import Subscription, User
 
 
@@ -35,7 +34,6 @@ class IngredientListView(generics.ListAPIView):
     """
     Получаем список ингредиентов с возможностью поиска по имени.
     """
-
     serializer_class = IngredientSerializer
 
     def get_queryset(self):
@@ -108,9 +106,14 @@ class RecipeViewSet(ModelViewSet):
             .order_by('ingredient__name')
         )
 
-        lines = [f"{item['ingredient__name']} — {item['total_amount']}\n" for item in ingredients]
-        response = HttpResponse("".join(lines), content_type="text/plain")
-        response['Content-Disposition'] = 'attachment; filename="shopping_cart.txt"'
+        lines = [
+            f'{item['ingredient__name']} — {item['total_amount']}\n'
+            for item in ingredients
+        ]
+        response = HttpResponse(''.join(lines), content_type='text/plain')
+        response['Content-Disposition'] = (
+            'attachment; filename="shopping_cart.txt"'
+        )
         return response
 
     @action(detail=True, methods=['post', 'delete'],
@@ -121,14 +124,16 @@ class RecipeViewSet(ModelViewSet):
 
         if request.method == 'POST':
             if cart_item.exists():
-                return Response({'error': 'Recipe already in shopping cart'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Recipe already in shopping cart'},
+                status=status.HTTP_400_BAD_REQUEST)
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
             serializer = RecipeSerializer(recipe, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
             if not cart_item.exists():
-                return Response({'error': 'Recipe not in shopping cart'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'error': 'Recipe not in shopping cart'},
+                status=status.HTTP_400_BAD_REQUEST)
             cart_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 

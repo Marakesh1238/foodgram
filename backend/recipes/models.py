@@ -1,7 +1,8 @@
 from django.db import models
-from django.core.validators import RegexValidator
+from django.core.validators import (RegexValidator, MinValueValidator,
+                                    MaxValueValidator)
 
-from api.constants import MAX_LENGTH, MAX_MEASURENENT_UNUT
+from api.constants import MAX_LENGTH, MAX_MEASUREMENT_UNIT
 from users.models import User
 
 
@@ -40,7 +41,7 @@ class Tag(models.Model):
         blank=True,
         verbose_name='Слаг'
     )
-    
+
     class Meta:
         ordering = ['name']
 

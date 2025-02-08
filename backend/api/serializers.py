@@ -36,7 +36,6 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
-    class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
     name = serializers.ReadOnlyField(source="ingredient.name")
     measurement_unit = serializers.ReadOnlyField(source="ingredient.measurement_unit")
