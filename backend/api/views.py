@@ -121,7 +121,7 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         cart_item = request.user.shopping_cart.filter(recipe=recipe)
-    
+
         if request.method == 'POST':
             if cart_item.exists():
                 return Response(
@@ -131,7 +131,7 @@ class RecipeViewSet(ModelViewSet):
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
             serializer = RecipeSerializer(recipe, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
         elif request.method == 'DELETE':
             if not cart_item.exists():
                 return Response(
