@@ -107,7 +107,7 @@ class RecipeViewSet(ModelViewSet):
         )
 
         lines = [
-            f'{item['ingredient__name']} — {item['total_amount']}\n'
+            f"{item['ingredient__name']} — {item['total_amount']}\n"
             for item in ingredients
         ]
         response = HttpResponse(''.join(lines), content_type='text/plain')

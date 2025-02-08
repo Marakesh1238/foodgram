@@ -21,7 +21,23 @@ from users.models import Subscription, User
 
 AMOUNT_MIN = 1
 AMOUNT_MAX = 32000
+COOKING_TIME_MIN = 1
+COOKING_TIME_MAX = 32000
 
+class UserRecipesSerializer(ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name',
+                  'last_name', 'email', 'avatar', 'is_subscribed']
+
+class Base64ImageField(ImageField):
+    def to_internal_value(self, data):
+        if isinstance(data, str) and data.startswith('data:image'):
+            format, imgstr = data.split(';base64,')
+            ext = format.split('/')[-1]
+            unique_filename = f'{uuid.uuid4()}.{ext}'
+            data = ContentFile(b64decode(imgstr), name=unique_filename)
+        return super().to_internal_value(data)
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -37,8 +53,9 @@ class IngredientSerializer(serializers.ModelSerializer):
 
 class RecipeIngredientSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField()
-    name = serializers.ReadOnlyField(source="ingredient.name")
-    measurement_unit = serializers.ReadOnlyField(source="ingredient.measurement_unit")
+    name = serializers.ReadOnlyField(source='ingredient.name')
+    measurement_unit = serializers.ReadOnlyField(
+        source='ingredient.measurement_unit')
     amount = serializers.IntegerField(
         validators=[
             MinValueValidator(AMOUNT_MIN),
@@ -223,16 +240,6 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'image', 'cooking_time']
 
 
-class Base64ImageField(ImageField):
-    def to_internal_value(self, data):
-        if isinstance(data, str) and data.startswith('data:image'):
-            format, imgstr = data.split(';base64,')
-            ext = format.split('/')[-1]
-            unique_filename = f'{uuid.uuid4()}.{ext}'
-            data = ContentFile(b64decode(imgstr), name=unique_filename)
-        return super().to_internal_value(data)
-
-
 class UserRepresentationSerializer(ModelSerializer):
     class Meta:
         model = User
@@ -377,10 +384,3 @@ class SubscriptionSerializer(ModelSerializer):
     def to_representation(self, instance):
         return SubscriptionShowSerializer(instance.author,
                                           context=self.context).data
-
-
-class UserRecipesSerializer(ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'first_name',
-                  'last_name', 'email', 'avatar', 'is_subscribed']
