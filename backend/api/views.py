@@ -25,9 +25,9 @@ from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeSerializer, TagSerializer, AvatarSerializer,
                           SubscriptionSerializer,
                           SubscriptionShowSerializer,
-                          UserSerializer,RecipeIngredient ,UserCreateSerializer)
+                          UserSerializer,RecipeIngredient,
+                          UserCreateSerializer)
 from users.models import Subscription, User
-
 
 
 class IngredientListView(generics.ListAPIView):
@@ -124,16 +124,18 @@ class RecipeViewSet(ModelViewSet):
 
         if request.method == 'POST':
             if cart_item.exists():
-                return Response({'error': 'Recipe already in shopping cart'},
-                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Recipe already in shopping cart'},
+                     status=status.HTTP_400_BAD_REQUEST)
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
             serializer = RecipeSerializer(recipe, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         elif request.method == 'DELETE':
             if not cart_item.exists():
-                return Response({'error': 'Recipe not in shopping cart'},
-                status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Recipe not in shopping cart'},
+                     status=status.HTTP_400_BAD_REQUEST)
             cart_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -147,7 +149,8 @@ class RecipeViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(instance, data=request.data,
+                                         partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)

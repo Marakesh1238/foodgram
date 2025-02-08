@@ -24,11 +24,13 @@ AMOUNT_MAX = 32000
 COOKING_TIME_MIN = 1
 COOKING_TIME_MAX = 32000
 
+
 class UserRecipesSerializer(ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'first_name',
                   'last_name', 'email', 'avatar', 'is_subscribed']
+
 
 class Base64ImageField(ImageField):
     def to_internal_value(self, data):
@@ -38,6 +40,7 @@ class Base64ImageField(ImageField):
             unique_filename = f'{uuid.uuid4()}.{ext}'
             data = ContentFile(b64decode(imgstr), name=unique_filename)
         return super().to_internal_value(data)
+
 
 class TagSerializer(serializers.ModelSerializer):
     class Meta:
@@ -351,7 +354,8 @@ class SubscriptionShowSerializer(UserSerializer):
         )
 
     def get_recipes(self, object):
-        recipes_limit = self.context['request'].query_params.get('recipes_limit', None)
+        recipes_limit = self.context['request'].query_params.get(
+            'recipes_limit', None)
         author_recipes = object.recipes.all()
         if recipes_limit is not None:
             author_recipes = object.recipes.all()[:int(recipes_limit)]
