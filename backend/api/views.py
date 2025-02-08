@@ -25,7 +25,7 @@ from .serializers import (IngredientSerializer, RecipeCreateSerializer,
                           RecipeSerializer, TagSerializer, AvatarSerializer,
                           SubscriptionSerializer,
                           SubscriptionShowSerializer,
-                          UserSerializer,RecipeIngredient,
+                          UserSerializer, RecipeIngredient,
                           UserCreateSerializer)
 from users.models import Subscription, User
 
@@ -121,21 +121,23 @@ class RecipeViewSet(ModelViewSet):
     def shopping_cart(self, request, pk=None):
         recipe = get_object_or_404(Recipe, pk=pk)
         cart_item = request.user.shopping_cart.filter(recipe=recipe)
-
+    
         if request.method == 'POST':
             if cart_item.exists():
                 return Response(
                     {'error': 'Recipe already in shopping cart'},
-                     status=status.HTTP_400_BAD_REQUEST)
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             ShoppingCart.objects.create(user=request.user, recipe=recipe)
             serializer = RecipeSerializer(recipe, context={'request': request})
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-
+    
         elif request.method == 'DELETE':
             if not cart_item.exists():
                 return Response(
                     {'error': 'Recipe not in shopping cart'},
-                     status=status.HTTP_400_BAD_REQUEST)
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             cart_item.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 

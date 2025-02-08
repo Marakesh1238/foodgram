@@ -283,7 +283,7 @@ class UserCreateSerializer(UserCreateSerializer):
             )
         return data
 
-    def create(self, validated_data): 
+    def create(self, validated_data):
         return User.objects.create_user(**validated_data)
 
     def to_representation(self, instance):
